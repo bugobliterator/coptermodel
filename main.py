@@ -79,7 +79,7 @@ def error_func(params):
     sq_resid = 0
     c = Copter(0.0025, params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7], params[8], params[9], params[10])
     for i in range(len(mot1)):
-        c.update(mot1[i]-1117,mot2[i]-1117,mot3[i]-1117,mot4[i]-1117,0.0025)
+        c.update(mot1[i]-params[11],mot2[i]-params[11],mot3[i]-params[11],mot4[i]-params[11],0.0025)
         if i > 400*5:
             resid_x = (c.omega_dot_x-ang_acc_x[i])
             resid_y = (c.omega_dot_y-ang_acc_y[i])
@@ -92,12 +92,13 @@ def error_func(params):
     print sq_resid
     return sq_resid
 
-params = [7.52222588,  3.58425171,  1.07713605,  0.07397551,  0.03250587,
-        0.02511311,  0.01416697, -0.02177066,  0.01014673,  0.48651429,
-        0.541438]
-bounds = [(.001,100.0), (.001,100.0), (.1,100.0), (.001,100.0), (.01,10.0), (.01,10.0), (.0001,10.0), (-.1,.1), (0.0,0.05), (0.0,1.0),(0.0,1.0)]
+params = [7.51810770e+00,   3.58577766e+00,   8.64518317e-01,
+         5.87832121e-02,   2.84742353e-02,   2.13692233e-02,
+         1.74909129e-02,  -2.35811974e-02,   2.66885902e-02,
+         4.86427532e-01,   5.37986428e-01,   1117.0]
+bounds = [(.001,100.0), (.001,100.0), (.001,100.0), (.001,100.0), (.01,10.0), (.01,10.0), (.0001,10.0), (-.1,.1), (0.0,0.05), (0.0,1.0),(0.0,1.0), (1000,1150)]
 
-print minimize(error_func, params, bounds=bounds)
+print minimize(error_func, params, bounds=bounds, method='TNC')
 
 print len(r_times), len(g_times), len(model_ang_acc_x),len(ang_acc_x)
 
