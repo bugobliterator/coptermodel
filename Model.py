@@ -54,7 +54,7 @@ CCW    CW
 '''
 
 class Copter:
-    def __init__(self, dt, Ki, Ktr, Im, Kd, x_gain, y_gain, z_gain, yaw_misalignment, system_lag, cg_x, cg_y):
+    def __init__(self, dt, Ki, Ktr, Im, Kd, x_gain, y_gain, z_gain, yaw_misalignment, system_lag, cg_x, cg_y, k_drag_x, k_drag_y, k_drag_z, x_thr_gain, y_thr_gain, z_thr_gain):
         self.m1 = Motor(Ki, Ktr, Im, Kd)
         self.m2 = Motor(Ki, Ktr, Im, Kd)
         self.m3 = Motor(Ki, Ktr, Im, Kd)
@@ -93,4 +93,27 @@ class Copter:
 
         self.omega_x += self.omega_dot_x * dt
         self.omega_y += self.omega_dot_y * dt
-        self.omega_z += self.omega_dot_z * dt
+        self.omega_z += self.omega_dot_z * dt        
+
+        self.theta_x = self.omega_x*dt + self.omega_dot_x*dt**2
+        self.theta_y = self.omega_y*dt + self.omega_dot_y*dt**2
+        self.theta_z = self.omega_z*dt + self.omega_dot_z*dt**2
+
+        total_thrust = self.m1.get_ang_vel()**2 + self.m2.get_ang_vel()**2 + self.m3.get_ang_vel()**2 + self.m4.get_ang_vel()**2
+        a_tx = total_thrust * sin(self.theta_z) * sin(self.theta_y) * self.x_thr_gain
+        a_ty = total_thrust * sin(self.theta_z) * sin(self.theta_x) * self.y_thr_gain
+        a_tz = total_thrust * sim(self.theta_x) * sin(self.theta_y) * self.z_thr_gain
+
+        #(v_wx, v_wy, v_wz) = to_body_frame(Vwn, Vwe, Vwd, self.theta_x, self.theta_y, self.theta_z)
+
+        ins_vel_x = (a_tx*dt) + self.vel_x #+ v_wx
+        ins_vel_y = (a_ty*dt) + self.vel_y #+ v_wy
+        ins_vel_z = (a_tz*dt) + self.vel_z #+ v_wz
+
+        a_dx = (sqrt(4*k_drag_x*dt*ins_vel_x + 1) + 2*k*dt*ins_vel_x + 1)/(2*k_drag_x * dt**2)
+        a_dy = (sqrt(4*k_drag_y*dt*ins_vel_y + 1) + 2*k*dt*ins_vel_y + 1)/(2*k_drag_y * dt**2)
+        a_dz = (sqrt(4*k_drag_z*dt*ins_vel_z + 1) + 2*k*dt*ins_vel_z + 1)/(2*k_drag_z * dt**2)
+
+        self.accel_x = a_tx - a_dx
+        self.accel_y = a_ty - a_dy
+        self.accel_z = a_tz - a_dz
